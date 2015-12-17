@@ -4,16 +4,18 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-      classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
+      classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+      classpath 'com.netflix.nebula:nebula-ospackage-plugin:3.0.0'
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'nebula.os-package'
 
 group = 'exhibitor'
 archivesBaseName = 'exhibitor'
-version = '1.5.4'
+version = '1.5.5'
 
 repositories {
     jcenter()
@@ -24,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.netflix.exhibitor:exhibitor-standalone:1.5.4'
+    compile 'com.netflix.exhibitor:exhibitor-standalone:1.5.5'
 }
 
 jar {
@@ -41,3 +43,27 @@ shadowJar {
 }
 
 assemble.dependsOn shadowJar
+
+task rpm(type: Rpm) {
+   dependsOn tasks.build
+   group = 'Build'
+   description = 'rpm for netflix exhibitor'
+   release = '1'
+
+   packageName 'exhibitor'
+   packageGroup 'Application'
+   version "${version}"
+   release "${release}"
+   vendor 'netflix'
+
+   user = 'root'
+   permissionGroup = 'root'
+
+   arch 'noarch'
+   os 'linux'
+
+   from(tasks.shadowJar) {
+       into "/opt/exhibitor"
+       rename(tasks.shadowJar.outputs.files.singleFile.name, "exhibitor-standalone-${version}.jar")
+   }
+}
